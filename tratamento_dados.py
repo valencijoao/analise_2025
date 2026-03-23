@@ -1,77 +1,72 @@
 import pandas as pd
 import re
-import openpyxl
+from rapidfuzz import fuzz
 
 
-def gerar_relatorio(arquivo_entrada, arquivo_saida):
+def limpar_texto(valor):
+    if pd.isna(valor):
+        return ""
+    valor = str(valor).strip().upper()
+    valor = re.sub(r'[^0-9A-Z ]', '', valor)
+    return valor
 
 
-    df_enviados = pd.read_excel(arquivo_entrada, sheet_name="Enviados")
-    df_inseridos = pd.read_excel(arquivo_entrada, sheet_name="Inseridos")
+def gerar_possiveis_matches(arquivo_entrada, arquivo_saida):
 
+    df_env = pd.read_excel(arquivo_entrada, sheet_name="Enviados")
+    df_ins = pd.read_excel(arquivo_entrada, sheet_name="Inseridos")
 
-    df_enviados.columns = (
-        df_enviados.columns
-        .str.replace('\xa0', '', regex=False)
-        .str.strip()
-    )
+    # limpar colunas
+    df_env.columns = df_env.columns.str.strip().str.replace('\xa0', '')
+    df_ins.columns = df_ins.columns.str.strip().str.replace('\xa0', '')
 
-    df_inseridos.columns = (
-        df_inseridos.columns
-        .str.replace('\xa0', '', regex=False)
-        .str.strip()
-    )
+    # padronizar nomes
+    df_ins = df_ins.rename(columns={'Licitação': 'ID', 'Site': 'Portal'})
 
+    # limpar campos principais
+    df_env['CLIENTE_LIMPO'] = df_env['Cliente'].apply(limpar_texto)
+    df_ins['CLIENTE_LIMPO'] = df_ins['Cliente'].apply(limpar_texto)
 
-    df_inseridos = df_inseridos.rename(columns={
-        'Licitação': 'ID',
-        'Site': 'Portal'
-    })
+    df_env['PORTAL_LIMPO'] = df_env['Portal'].apply(limpar_texto)
+    df_ins['PORTAL_LIMPO'] = df_ins['Portal'].apply(limpar_texto)
 
+    # resultado
+    resultados = []
 
-    def limpar_texto(valor):
-        if pd.isna(valor):
-            return ""
-        valor = str(valor).strip()
-        valor = re.sub(r'[^0-9a-zA-Z]', '', valor)
-        return valor.upper()
+    # comparação cruzada (controlada)
+    for i, env_row in df_env.iterrows():
 
-    colunas_chave = ['ID', 'Portal', 'Cliente']
+        for j, ins_row in df_ins.iterrows():
 
-    for col in colunas_chave:
-        df_enviados[col + '_LIMPO'] = df_enviados[col].apply(limpar_texto)
-        df_inseridos[col + '_LIMPO'] = df_inseridos[col].apply(limpar_texto)
+            # similaridade cliente
+            score_cliente = fuzz.ratio(
+                env_row['CLIENTE_LIMPO'],
+                ins_row['CLIENTE_LIMPO']
+            )
 
+            # similaridade portal
+            score_portal = fuzz.ratio(
+                env_row['PORTAL_LIMPO'],
+                ins_row['PORTAL_LIMPO']
+            )
 
-    df_enviados['CHAVE'] = (
-        df_enviados['ID_LIMPO'] + '|' +
-        df_enviados['Portal_LIMPO'] + '|' +
-        df_enviados['Cliente_LIMPO']
-    )
+            # regra mínima (ajustável)
+            if score_cliente > 80 and score_portal > 80:
 
-    df_inseridos['CHAVE'] = (
-        df_inseridos['ID_LIMPO'] + '|' +
-        df_inseridos['Portal_LIMPO'] + '|' +
-        df_inseridos['Cliente_LIMPO']
-    )
+                resultados.append({
+                    'ID_ENVIADO': env_row['ID'],
+                    'ID_INSERIDO': ins_row['ID'],
+                    'CLIENTE_ENV': env_row['Cliente'],
+                    'CLIENTE_INS': ins_row['Cliente'],
+                    'PORTAL_ENV': env_row['Portal'],
+                    'PORTAL_INS': ins_row['Portal'],
+                    'SCORE_CLIENTE': score_cliente,
+                    'SCORE_PORTAL': score_portal
+                })
 
+    df_resultado = pd.DataFrame(resultados)
 
-    df_inseridos_unico = df_inseridos[['CHAVE']].drop_duplicates().copy()
-    df_inseridos_unico['Participou'] = 'Sim'
+    df_resultado.to_excel(arquivo_saida, index=False)
 
-
-    df_final = df_enviados.merge(
-        df_inseridos_unico,
-        on='CHAVE',
-        how='left'
-    )
-
-    df_final['Participou'] = df_final['Participou'].fillna('Não')
-
-    with pd.ExcelWriter(arquivo_saida, engine="openpyxl") as writer:
-        df_final.to_excel(writer, sheet_name="Analise Completa", index=False)
-
-
-gerar_relatorio('tecsystems_2025.xlsm', 'analise_2026.xlsx')
-
-print("Arquivo gerado com sucesso!")
+gerar_possiveis_matches('tecsystems_2025.xlsm', 'analise_teste_2025.xlsx')
+print("Matches gerados com sucesso!")
