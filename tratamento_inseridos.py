@@ -3,8 +3,7 @@ import openpyxl
 
 df = pd.read_excel('tecsystems_2025.xlsm' , sheet_name= 'Inseridos' )
 
-
-
+arquivo_saida = 'inseridos_tratados.xlsx'
 
 df = df.apply(lambda x: x.str.strip() if x.dtype == "object" else x)
 # 1. Limpeza profunda de espaços (incluindo espaços internos duplos e invisíveis)
@@ -15,7 +14,8 @@ df.loc[df['Cliente'].str.contains('AIR LIQUIDE', case=False, na=False), 'Cliente
 
 map_clientes = {
     'PORTO SEGURO COMPANHIA DE SEGUROS GERAIS':'Porto Seguro',
-    'MANUPA COMERCIO EXPORTACAO IMPORTACAO DE EQUIPAMENTOS E VEIC': 'Veículos',
+    'MANUPA COMERCIO EXPORTACAO IMPORTACAO DE EQUIPAMENTOS E VEIC': 'Manupa',
+
     'EDUCANTES PLATAFORMA ONLINE EDUCACIONAL LTDA SP':'Educantes',
     'HEXIS CIENTIFICA LTDA':'Hexis',
     'COMAZI TRATORES E MAQUINAS LTDA':'Comazi',
@@ -30,7 +30,19 @@ map_clientes = {
     'SERVICOS AEREOS INDUSTRIAIS ESPECIALIZADOS SAI LTDA':'Sai Brasil',
     'PHD SISTEMAS DE ENERGIA INDUSTRIA, COMERCIO, IMPORTACAO E EX':'PHD',
     'POTTENCIAL VEICULOS ESPECIAIS LTDA':'Pottencial',
+    'POTTENCIAL VEICULOS - SP':'Pottencial'
 }
 
 df['Cliente'] = df['Cliente'].replace(map_clientes)
-print(df.head())
+
+df['Site'] = df['Site'].astype(str).str.replace(r'\s+', ' ', regex=True).str.strip()
+df['Site'] = df['Site'].str.replace('COMPRASNET','ComprasNet')
+df = df[df['Site'] == 'ComprasNet'].reset_index(drop=True)
+
+df['Data'] = pd.to_datetime(df['Data'], dayfirst=True).dt.date
+
+df = df.drop_duplicates().reset_index(drop=True)
+
+df.to_excel(arquivo_saida, index=False, engine='openpyxl')
+print(f"Arquivo salvo com sucesso:{arquivo_saida}")
+
