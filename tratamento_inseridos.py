@@ -1,6 +1,8 @@
 import pandas as pd
 import openpyxl
 
+
+
 df = pd.read_excel('tecsystems_2025.xlsm' , sheet_name= 'Inseridos' )
 
 arquivo_saida = 'inseridos_tratados.xlsx'
@@ -14,13 +16,12 @@ df.loc[df['Cliente'].str.contains('AIR LIQUIDE', case=False, na=False), 'Cliente
 
 map_clientes = {
     'PORTO SEGURO COMPANHIA DE SEGUROS GERAIS':'Porto Seguro',
-    'MANUPA COMERCIO EXPORTACAO IMPORTACAO DE EQUIPAMENTOS E VEIC': 'Manupa',
-
+    'MANUPA COMERCIO EXPORTACAO IMPORTACAO DE EQUIPAMENTOS E VEIC': 'Veículos',
     'EDUCANTES PLATAFORMA ONLINE EDUCACIONAL LTDA SP':'Educantes',
     'HEXIS CIENTIFICA LTDA':'Hexis',
     'COMAZI TRATORES E MAQUINAS LTDA':'Comazi',
     'COVEZI CAMINHOES E ONIBUS LTDA - TOCANTINS':'Covezi',
-    'MEGAFER COMERCIO DE FERRO E ACO LTDA - ME':'MG3',
+    'MEGAFER COMERCIO DE FERRO E ACO LTDA - ME':'Megafer',
     'LICITEC COMERCIAL LTDA':'Licitec',
     'L.P.M. TELEINFORMATICA LTDA':'LPM',
     'GCT - GERENCIAMENTO E CONTROLE DE TRANSITO S/A':'GCT',
@@ -29,8 +30,17 @@ map_clientes = {
     'DANFOSS DO BRASIL INDUSTRIA E COMERCIO LTDA':'Danfoss',
     'SERVICOS AEREOS INDUSTRIAIS ESPECIALIZADOS SAI LTDA':'Sai Brasil',
     'PHD SISTEMAS DE ENERGIA INDUSTRIA, COMERCIO, IMPORTACAO E EX':'PHD',
-    'POTTENCIAL VEICULOS ESPECIAIS LTDA':'Pottencial',
-    'POTTENCIAL VEICULOS - SP':'Pottencial'
+    'POTTENCIAL VEICULOS ESPECIAIS LTDA':'Veículos',
+    'POTTENCIAL VEICULOS - SP':'Veículos',
+    'GBF SOLUCÕES INTELIGENTES LTDA':'MG3 Comercial',
+    'FGB COMERCIAL LTDA':'MG3 Comercial',
+    'CONSTRUTORA CENTRO LESTE ENGENHARIA LTDA':'Construtoras',
+    'CAIO - INDUSCAR INDUSTRIA E COMERCIO DE CARROCERIAS LTDA':'Veículos',
+    'Pottencial':'Veículos',
+    'G-INTER TRANSPORTES':'Transportadoras',
+    'TREMONT CONSTRUÇÕES E SERVIÇOS LTDA':'Tremont',
+    'SETTI SERVICOS ESPECIALIZADOS EM TELECOMUNICACOES E TI S/A':'Setti'
+
 }
 
 df['Cliente'] = df['Cliente'].replace(map_clientes)
